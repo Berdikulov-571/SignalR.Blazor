@@ -49,6 +49,13 @@
             InvokeAsync(StateHasChanged);
         });
 
+        hubConnection.On<UserModel>("History", (UserModel model) =>
+        {
+            var encodedMsg = $"{model.UserName}: {model.Message}";
+            messages.Add(encodedMsg);
+            InvokeAsync(StateHasChanged);
+        });
+
         hubConnection.On<string>("Other", user =>
         {
             var encodedMsg = $"{user}: Joined Chat {DateTime.Now}";
