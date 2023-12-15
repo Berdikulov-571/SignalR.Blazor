@@ -5,7 +5,7 @@ namespace SignalR.Blazor
 {
     public class ChatHub : Hub
     {
-        private static List<string> messages = new List<string>();
+        private static List<UserModel> messages = new List<UserModel>();
         
         private static Dictionary<string, string> _users = new Dictionary<string, string>();
 
@@ -15,17 +15,18 @@ namespace SignalR.Blazor
 
             foreach (var i in messages)
             {
-                await Clients.Caller.SendAsync("ReceiveMessage", user, i);
+                await Clients.Caller.SendAsync("History",i);
             }
 
             await Clients.Others.SendAsync("Other", user);
+
             await Clients.Caller.SendAsync("Welcome",user);    
         }
 
         public async Task SendMessage(string user, string message)
         {
             await Clients.All.SendAsync("ReceiveMessage", user, message);
-            messages.Add(message);
+            messages.Add(new UserModel() { Message = message, UserName = user});
         }
     }
 }
