@@ -29,6 +29,18 @@
 
 <hr>
 
+<h3>Image Upload</h3>
+
+<InputFile OnChange="@OnFileSelected" />
+<button @onclick="SendImage">Send Image</button>
+
+<div>
+    @if (receivedImage != null)
+    {
+        <img src="@imageDataUrl" alt="Received Image" />
+    }
+</div>
+
 <ul id="messagesList">
     @foreach (var message in messages)
     {
@@ -36,7 +48,12 @@
     }
 </ul>
 
+
 @code {
+    private byte[] selectedImage;
+    private byte[] receivedImage;
+    private string imageDataUrl;
+
     private List<string> messages = new List<string>();
 
     private HubConnection? hubConnection;
@@ -65,6 +82,14 @@
             messages.Add(encodedMsg);
             InvokeAsync(StateHasChanged);
         });
+
+        hubConnection.On<byte[]>("ReceiveImage", image =>
+        {
+            receivedImage = image;
+            imageDataUrl = $"data:image/png;base64,{Convert.ToBase64String(receivedImage)}";
+            InvokeAsync(StateHasChanged);
+        });
+
 
         await hubConnection.StartAsync();
     }
@@ -97,5 +122,25 @@
         {
             await hubConnection.DisposeAsync();
         }
+    }
+    private async Task OnFileSelected(InputFileChangeEventArgs e)
+    {
+        var file = e.GetMultipleFiles().FirstOrDefault();
+        if (file != null)
+        {
+            using (var stream = file.OpenReadStream())
+            {
+                using (var memoryStream = new MemoryStream())
+                {
+                    await stream.CopyToAsync(memoryStream);
+                    selectedImage = memoryStream.ToArray();
+                }
+            }
+        }
+    }
+    private async Task SendImage()
+    {
+        if (hubConnection is not null)
+            await hubConnection.SendAsync("SendImage", selectedImage);
     }
 }
