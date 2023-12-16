@@ -35,13 +35,19 @@ namespace SignalR.Blazor
         {
             await Clients.Client(id).SendAsync("ReceiveMessageFromUser", user, message);
             await Clients.Caller.SendAsync("ReceiveMessageFromUser", user, message);
-
         }
+
 
         public async Task SendToGroupMessage(string groupName, string user, string message)
             => await Clients.Group(groupName).SendAsync("ReceiveMessageFromGroup", user, message);
 
         public async Task JoinGroup(string groupName)
             => await Groups.AddToGroupAsync(Context.ConnectionId, groupName);
+
+
+        public async Task SendImage(byte[] image)
+        {
+            await Clients.All.SendAsync("ReceiveImage", image);
+        }
     }
 }
