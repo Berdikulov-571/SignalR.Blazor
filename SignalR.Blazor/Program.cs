@@ -5,7 +5,7 @@ namespace SignalR.Blazor
 {
     public class Program
     {
-        public static void Main(string[] args)
+        public static  void Main(string[] args)
         {
             var builder = WebApplication.CreateBuilder(args);
 
@@ -35,6 +35,20 @@ namespace SignalR.Blazor
             app.MapHub<ChatHub>("/chathub");    
             app.MapRazorComponents<App>()
                 .AddInteractiveServerRenderMode();
+
+
+            //app.UseEndpoints(endpoints =>
+            //{
+            //    endpoints.MapBlazorHub();
+            //    endpoints.MapHub<ChatHub>("/ImageHub");
+            //});
+
+            //app.UseEndpoints(endpoints =>
+            //{
+            //    endpoints.MapHub<ChatHub>("/imageHub");
+            //    endpoints.MapBlazorHub();
+            //    endpoints.MapFallbackToPage("/_Host");
+            //});
 
             app.Run();
         }
