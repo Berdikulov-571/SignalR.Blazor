@@ -1,0 +1,101 @@
+﻿@page "/chat"
+@rendermode InteractiveServer
+@using Microsoft.AspNetCore.SignalR.Client
+@inject NavigationManager Navigation
+@implements IAsyncDisposable
+
+<PageTitle>Chat</PageTitle>
+
+<div class="form-group">
+    <label>
+        User:
+        <input @bind="userInput" />
+    </label>
+</div>
+<div class="form-group">
+    <label>
+        Message:
+        <input @bind="messageInput" size="50" />
+    </label>
+</div>
+<div class="form-group">
+    <label>
+        Chat Id:
+        <input @bind="touserInput" size="50" />
+    </label>
+</div>
+<button @onclick="SendToAll" disabled="@(!IsConnected)">Send To All</button>
+<button @onclick="SendToUser" disabled="@(!IsConnected)">Send To User</button>
+
+<hr>
+
+<ul id="messagesList">
+    @foreach (var message in messages)
+    {
+        <li>@message</li>
+    }
+</ul>
+
+@code {
+    private List<string> messages = new List<string>();
+
+    private HubConnection? hubConnection;
+    private string? userInput;
+    private string? touserInput;
+    private string? messageInput;
+
+    protected override async Task OnInitializedAsync()
+    {
+        hubConnection = new HubConnectionBuilder()
+            .WithUrl(Navigation.ToAbsoluteUri("/chathub"))
+            .Build();
+
+        hubConnection.On<string, string, string>(nameof(ReceiveMessage), ReceiveMessage);
+
+        hubConnection.On<string, string>("ReceiveMessageFromUser", (user, message) =>
+        {
+            var encodedMsg = $"{user}: {message}";
+            messages.Add(encodedMsg);
+            InvokeAsync(StateHasChanged);
+        });
+
+        hubConnection.On<string, string>("ReceiveMessageFromGroup", (user, message) =>
+        {
+            var encodedMsg = $"{user}: {message}";
+            messages.Add(encodedMsg);
+            InvokeAsync(StateHasChanged);
+        });
+
+        await hubConnection.StartAsync();
+    }
+
+    private void ReceiveMessage(string user, string connectionId, string message)
+    {
+        var encodedMsg = $"{user} ({connectionId}): {message}";
+        messages.Add(encodedMsg);
+        InvokeAsync(StateHasChanged);
+    }
+
+    private async Task SendToAll()
+    {
+        if (hubConnection is not null)
+            await hubConnection.SendAsync("SendToAllMessage", userInput, messageInput);
+    }
+
+    private async Task SendToUser()
+    {
+        if (hubConnection is not null)
+            await hubConnection.SendAsync("SendToUserMessage", touserInput, userInput, messageInput);
+    }
+
+    public bool IsConnected =>
+        hubConnection?.State == HubConnectionState.Connected;
+
+    public async ValueTask DisposeAsync()
+    {
+        if (hubConnection is not null)
+        {
+            await hubConnection.DisposeAsync();
+        }
+    }
+}
